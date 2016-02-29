@@ -77,7 +77,7 @@ $pr=0;
 for($i=0;$i<=count($kredit[0]);$i++)// echo $kredit[$i][0];
 {
 for($sem=1;$sem<=8;$sem++) //echo $kred[$i][$sem];
-if($kredit[$i][$sem]>0) //находим семесир в котором можно выбирать
+if($kredit[$i][$sem]!=0) //находим семесир в котором можно выбирать
 {$summa=0;
 $price[$pr][0]=$kredit[$i][0];
 $price[$pr][1]=$sem;
@@ -85,8 +85,9 @@ $price[$pr][1]=$sem;
 //$k=1;
 for($sum=0;$sum<=count($basket);$sum++)
 {//echo $k++;
- if (($basket[$sum][$sem]>0)&&($basket[$sum][11]==$kredit[$i][0])) {$summa+=$basket[$sum][10];}
- //echo "<BR>".$basket[$sum][11].'+'.$sem.'-'.$basket[$sum][$sem].'+'.$sem;
+ if (($basket[$sum][$sem]!=0)&&($basket[$sum][11]==$kredit[$i][0])) {$summa+=$basket[$sum][10];
+//echo "<BR>".$basket[$sum][11].'+'.$sem.'-'.$basket[$sum][$sem].'+'.$sem;
+}
  }
 $price[$pr][2]=$summa;
 //
@@ -95,10 +96,36 @@ $price[$pr++][3]=$kredit[$i][$sem];
 }}
 //var_dump($price);
 // узнаем №цену"
-echo arr2tab($kredit).'<BR>'.arr2tab($basket).'<BR>'.arr2tab($price);
+//echo arr2tab($kredit).'<BR>'.arr2tab($basket).'<BR>'.arr2tab($price);
 
 for($igl=1;$igl<=count($kredit);$igl++)
+{$m=0;$p=0;
+//unset($perep);
+$tab0='<tr><td></td><td align="center"><big>Блок_<b>'.$block[$igl].'</b>_дисциплін</big></td><td></td><td></td><td align="right"><form id="form1" name="form1" method="post" action="..">
+    <input type="submit" name="Submit" value="все вірно, вийти з системи" />
+  </form> 
+    </td><tr>';
+//считаем что у человека выбрано в табличку
+$vibor='<table><tr>';
+for($blp=0;$blp<=count($price);$blp++)
+if($igl==$price[$blp][0]) 
 {
+if($price[$blp][3]!=-1) $vibor.='<td>&nbsp;&nbsp;&nbsp;&nbsp;'.$price[$blp][1].' семестр:Всього:&nbsp;<big>'.$price[$blp][3].'</big>&nbsp;обрано: &nbsp;<big>'.$price[$blp][2].'</Big>&nbsp;</td>';
+//if ($price[$blp][3]>price[$blp][2]) $perepoln=0;
+//массив переполнений
+//формат: sem/1-0
+$perepoln=1;
+if((int)$price[$blp][2]<(int)$price[$blp][3]) {$perepoln=0;
+//echo 'переп'.$price[$blp][2].$price[$blp][3].$perepoln;
+}
+
+$perep[$p][0]=$price[$blp][1];
+$perep[$p][1]=$perepoln;
+$p++;
+}
+$vibor.='</tr></table>';
+
+//echo arr2tab($perep);
 // узнаем перечень дисциплин для семестров
 //$sql1="select id, prdm from v_prdm 
 $sql1="select v_prdm.id, v_prdm.prdm, v_prdm.vikl, v_prdm.kred, v_plan.id, v_plan.sem1,v_plan.sem2,v_plan.sem3,v_plan.sem4,v_plan.sem5,v_plan.sem6,v_plan.sem7,v_plan.sem8  from v_prdm 
@@ -112,30 +139,44 @@ while ($prdm=mysql_fetch_row($result1))
 //echo "l";
 //}
 {
-$tab0='<tr><td></td><td align="center"><big>Блок_<b>'.$block[$igl].'</b>_дисциплін</big></td><tr>';
-$flag_plan="0".$prdm[5].$prdm[6].$prdm[7].$prdm[8].$prdm[9].$prdm[10].$prdm[11].$prdm[12];
-//echo ++$mmm.$prdm[1].'<BR>';
 //28-02/////////
 $flag=0;
 $sql_f="select flag, sem1,sem2,sem3,sem4,sem5,sem6,sem7,sem8,plan from v_list where stud=$stud and plan=$prdm[4]";
 $result_f=mysql_query($sql_f) or die("Invalid query: " . mysql_error());
 $flagi=mysql_fetch_row($result_f);
+$flag_plan="0".$prdm[5].$prdm[6].$prdm[7].$prdm[8].$prdm[9].$prdm[10].$prdm[11].$prdm[12];
 /////////// формируем семестры
 $tab_sem='<table>  <tr><td>семестр:</td>';
+$flag1=1;
 for($i=1;$i<=8;$i++)
-{
+{$disabl='';
 $flag=$flagi[0];
 if($flagi[$i]<>0) {$new_val[$i]=0;$chekd='checked="1" ';$fon_sem='bgcolor="#99EE99"';} else {$new_val[$i]=1; $chekd='';$fon_sem='bgcolor="#EE9999"';}
+//ищем а не переполнен ли єтот семестр и деактивируем его
+for($dis=0;$dis<=count($perep[1]);$dis++) 
+if(($i==$perep[$dis][0])&&($perep[$dis][1]==1)) 
+{$disabl=' disabled="disabled" ';
+$new_val[$i]=0;
+$st1='<i>';$st2='</i>';
+$flag1=0;
+}
 $metka_sem="'".$prdm[4].'s'.$stud.'s'.$i.'s'.$new_val[$i]."'";
 //$flag_plan="00011100"; //!!!
 if ($flag_plan[$i]<>0) {$tab_sem.='<td '.$fon_sem.'><label onclick="sem('.$metka_sem.')">
-      <input type="radio" '.$chekd.' name="semo'.$prdm[0].'" value="'.$i.'" id="semestr_v_'.$i.'" />'.$i.'</label></td>';} else $tab_sem.='<td width="30">&nbsp;</td>';
+      <input type="radio"  '.$chekd.' '.$disabl.' name="semo'.$prdm[0].'" value="'.$i.'" id="semestr_v_'.$i.'" />'.$st1.$i.$st2.'</label></td>';} else $tab_sem.='<td width="30">&nbsp;</td>';
+	  $disabl='';$st1='<b>';$st2='</b>';
 	  }
 $tab_sem.='</tr></table>';
 /////////////
 if ($flagi[0]>0) $flag=1; 
 //if(!in_array($prdm[1],$prdm_v))
-echo $flagi[0];
+//echo $flagi[0];
+//28-02 думать как ограничить вібор
+if($flag==1) $flag=0; else $flag=1;
+//if($perep[$price[$blp][1]][1]==1) $flag=0;
+//echo $perep[$price[$blp][1]][1];
+ //
+//echo $perep[$price[$blp][1]][1];
 if($flagi[0]>0) 
 {$fon1='bgcolor="#99EE99"';$fon='bgcolor="#88DD88"';$val=1;$mes=' &#9745;';
 //зелененький
@@ -145,15 +186,10 @@ if($flagi[0]>0)
 // echo "red";
 //if($kor_val>=$korzina[2]) {$val=0;} else $val=1; $mes='&#9744;';
 }
-//// ищем єту дисциплину среди вібранніхша)
-//2602
-//if(in_array($prdm[1],$prdm_v)) {$val=0;}
-//print_r ($prdm_v);
-//echo "<BL>";
-
 
 // считаем кол-во выбравших
-$sql_c="select count(id) from v_list where plan=$prdm[4] and flag!=0";
+//!!! 29 !!! нужно добавить семестр
+$sql_c="select count(id) from v_list where plan=$prdm[4] and flag!=0 and (v_list.sem1 = '1' or v_list.sem2 = '1' or v_list.sem3 = '1' or v_list.sem4 = '1' or v_list.sem5 = '1' or v_list.sem6 = '1' or v_list.sem7 = '1' or v_list.sem8 = '1')";
 //echo $sql_c;
 $result_c=mysql_query($sql_c) or die("Invalid query: " . mysql_error());
 $kol = mysql_fetch_array($result_c); 
@@ -164,19 +200,13 @@ $kol=$kol[0];
 
 //$metka="'".$stud."i".$prdm[0]."i".$val."i".$flag."'";
 //if($price[$igl][3])$flag=1;else $flag=0;
-//28-02 думать как ограничить вібор
-if($flag==1) $flag=0; else $flag=1;
+//if ($flag1==0) $flag=0;
 //флаг должен менять значение с 0 на 1 м наоборот
 $metka="'".$stud."i".$prdm[4]."i".$flag."'";
 //$tabi.='<tr '.$fon1.' ><td >'.++$m.'</td><td onclick="b('.$metka.')">'.$prdm[1].'</td><td>'.$vik[$prdm[2]].'</td> <td>&nbsp;заповн.гр.:'.ceil(100*$kol/$kol_bl[$korzina[0]]).'%</td><td>'.$prdm[3].'&nbsp;крдт.</td><td>семестр:'.$tab_sem.'</td></tr>';
-$tabi.='<tr '.$fon1.' ><td >'.++$m.'</td><td onclick="b('.$metka.')">'.$prdm[1].'</td><td>'.$tab_sem.'</td><td>'.$prdm[3].'&nbsp;крдт.</td> <td>&nbsp;заповн.гр.:'.ceil(100*$kol/$kol_bl[$korzina[0]]).'%</td><td></td></tr>';
+$tabi.='<tr '.$fon1.' ><td >'.++$m.'</td><td onclick="b('.$metka.')">'.$prdm[1].'</td><td>'.$tab_sem.'</td><td>'.$prdm[3].'&nbsp;крдт.</td> <td>&nbsp;заповн.гр.:'.ceil(100*$kol/$kol_bl[$igl]).'%</td><td></td></tr>';
 }
-$m=0;
-//echo '<HR>'.$korzina[0].'<HR>';
-//считаем что у человека выбрано в табличку
-$vibor='<table><tr>';
-for($blp=0;$blp<=count($price)-1;$blp++) if($igl==$price[$blp][0])$vibor.='<td>'.$price[$blp][1].' семестр: обрано кредитів: &nbsp;<big>'.$price[$blp][2].'</Big>&nbsp;&nbsp;/&nbsp;&nbsp;Всього кредитів:&nbsp;<big>'.$price[$blp][3].'</big>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>';
-$vibor.='</tr></table>';
+
 //echo $vibor;
 //$tabi=$tab00.$tab0.$vibor.'</tr>'.$tabi;
 $tabi=$tab00.$tab0.'<td colspan=5 align="right">'.$vibor.'</td></tr>'.$tabi;
